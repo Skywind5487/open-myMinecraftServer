@@ -49,9 +49,3 @@ poetry run dev
 # 執行測試
 poetry run pytest tests/
 ```
-
-
-
-> 💡 需要完整文件或客製化部署？請聯繫專案維護者！
-
-
