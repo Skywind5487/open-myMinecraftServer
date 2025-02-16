@@ -49,10 +49,3 @@ poetry run dev
 # 執行測試
 poetry run pytest tests/
 ```
-
-## 📄 授權條款
-本專案採用 [MIT License](LICENSE) 授權
-
-> 💡 需要完整文件或客製化部署？請聯繫專案維護者！
-
-
