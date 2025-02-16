@@ -1,16 +1,13 @@
 {
   "bot": {
     "prefix": "!",
-    "token": "your_discord_token_here",
-    "status": "Minecraft 伺服器管理"
-  },
-  "wiki": {
-    "base_url": "https://raw.githubusercontent.com/Skywind5487/open-myMinecraftServer/main/assets/wiki",
-    "default_page": "首頁"
+    "status": "Minecraft 伺服器管理",
+    "token": "your_discord_token_here"
   },
   "network": {
     "ddns": "your_ddns.com",
     "alist": {
+      "url": "http://your_ddns.com",
       "http_port": 5244,
       "https_port": 5245,
       "username": "admin",
@@ -18,7 +15,13 @@
     }
   },
   "command_colors": {
-    "ping": "0x00ff00",
-    "help": "0x0000ff"
+    "ping": "#3498db",
+    "help": "#e67e22",
+    "alist": "#9b59b6",
+    "addserver": "#3498db"
+  },
+  "wiki": {
+    "base_url": "https://raw.githubusercontent.com/your_username/your_repo/main/assets/wiki",
+    "default_page": "首頁"
   }
 } 

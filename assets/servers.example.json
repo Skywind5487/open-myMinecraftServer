@@ -1,0 +1,10 @@
+{
+  "servers": [
+    {
+      "path": "D:\\MC\\生存伺服器_1.20.1_25565_fabric\\StartServer.bat"
+    },
+    {
+      "path": "C:\\Servers\\創造世界_1.21.4_25566_vanilla\\start_server.bat"
+    }
+  ]
+} 
