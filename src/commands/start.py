@@ -59,6 +59,36 @@ def parse_server_info(full_path):
     }
 
 class StartServer(commands.Cog):
+    COMMAND_HELP = {
+        "name": "start",
+        "title": "伺服器啟動",
+        "category": "基礎",
+        "color": "0x00FF00",  # 亮綠色
+        "description": "啟動指定的 Minecraft 伺服器實例",
+        "sections": [
+            {
+                "title": "參數格式",
+                "content": [
+                    "伺服器名稱_版本"
+                ]
+            },
+            {
+                "title": "注意事項",
+                "content": [
+                    "需要 'canOpenServer' 角色權限",
+                    "啟動過程約需 1-3 分鐘",
+                    "⚠️ 若無權限請聯繫管理員取得"
+                ]
+            }
+        ],
+        "tips": [
+            "用法: !start <伺服器名稱_版本>",
+            "功能: 啟動指定版本 Minecraft 伺服器",
+            "權限需求: canOpenServer 身分組",
+            "範例: !start skyworld_1.21.4"
+        ]
+    }
+    
     def __init__(self, bot):
         self.bot = bot
         self.active_servers = {}
@@ -161,4 +191,5 @@ class StartServer(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(StartServer(bot)) 
+    await bot.add_cog(StartServer(bot))
+    logger.info('Start 指令已載入') 

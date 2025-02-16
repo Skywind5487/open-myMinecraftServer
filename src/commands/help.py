@@ -5,145 +5,103 @@ import json
 from pathlib import Path
 import frontmatter
 import re
-from dotenv import load_dotenv
+from src.bot import config  # 直接使用主程式的設定
 
 logger = logging.getLogger('bot')
 
-class CustomHelp(commands.Cog, name="幫助指令"):
-    def __init__(self, bot):
-        self.bot = bot
-        self._original_help_command = bot.help_command
-        bot.help_command = None  # 禁用預設 help
-        self.config = load_config()  # 使用新的設定載入方式
-        self.wiki_base = self.config["wiki"]["base_url"]
-        self.wiki_path = Path("assets/wiki")
-        self.commands = self._load_commands()
-        logger.info('自定義 help 指令已初始化')
+class CustomHelp(commands.HelpCommand):
+    def __init__(self):
+        super().__init__()
 
-    def _load_commands(self):
-        """從 JSON 載入指令說明"""
-        help_path = Path("assets/command_help")
-        commands = []
-        
-        for file in help_path.glob("*.json"):
-            try:
-                with open(file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    # 驗證必要字段
-                    required_fields = ['name', 'title', 'category', 'sections']
-                    if not all(field in data for field in required_fields):
-                        logger.warning(f"無效的指令文件格式：{file.name}")
-                        continue
-                    
-                    commands.append({
-                        'name': data['name'],
-                        'title': data['title'],
-                        'color': int(data.get('color', '0x7289DA'), 16),
-                        'category': data['category'],
-                        'sections': data['sections']
-                    })
-                    logger.info(f"已載入指令說明：{data['name']}")
-            except Exception as e:
-                logger.error(f"載入指令文件錯誤 {file}: {str(e)}")
-        
-        return commands
-
-    def format_text(self, text, **kwargs):
-        """簡單的文本格式化"""
-        return text.format(**kwargs)
-
-    WIKI_MAP = {
-        'start': '01_指令/基礎/start',
-        'alist': '01_指令/進階/alist'
-    }
-
-    async def send_help_embed(self, ctx, command_name):
-        command = next((c for c in self.commands if c['name'] == command_name), None)
-        if not command:
-            return await ctx.send("❌ 找不到此指令說明")
-        
-        try:
-            embed = discord.Embed(
-                title=f"{command['title']}",
-                color=command['color']
-            )
-            
-            for section in command['sections']:
-                content = section['content']
-                # 處理陣列類型的內容
-                if isinstance(content, list):
-                    content = '\n'.join(content)
-                embed.add_field(
-                    name=section['title'],
-                    value=content,
-                    inline=False
-                )
-            
-            await ctx.send(embed=embed)
-            
-        except Exception as e:
-            logger.error(f"生成幫助訊息錯誤：{str(e)}")
-            await ctx.send("⚠️ 生成說明時發生錯誤")
-
-    @commands.command(name='help', description='顯示幫助訊息')
-    async def help_command(self, ctx, command_name: str = None):
-        if command_name:
-            await self.send_help_embed(ctx, command_name)
-        else:
-            # 顯示指令分類列表
-            embed = discord.Embed(
-                title="📚 指令系統總覽",
-                description=f"使用 `{self.config['bot']['prefix']}help <指令名稱>` 查看詳細說明\n[GitHub 維基文件]({self.config['wiki']['base_url']})",
-                color=0x7289DA
-            )
-            
-            # 分類指令
-            categories = {}
-            for cmd in self.commands:
-                category = cmd['category']
-                categories.setdefault(category, []).append(cmd)
-            
-            # 添加分類欄位
-            for cat, cmds in categories.items():
-                embed.add_field(
-                    name=f"🔹 {cat}類指令",
-                    value='\n'.join([f"`!help {c['name']}` - {c['title']}" for c in cmds]),
-                    inline=False
-                )
-            
-            await ctx.send(embed=embed)
-
-    @commands.command(name='wiki')
-    async def wiki_command(self, ctx, page: str = None):
-        if page:
-            await ctx.send(f"🌐 [查看完整維基](https://your-wiki-site.com/{page})")
-        else:
-            await ctx.send("📚 [維基首頁](https://your-wiki-site.com)")
-
-    async def send_command_help(self, ctx, command_name):
-        """從 Wiki 載入單一指令說明"""
-        command = next((c for c in self.commands if c['name'] == command_name), None)
-        if not command:
-            return await ctx.send(f"❌ 找不到指令：{command_name}")
-        
+    async def send_bot_help(self, mapping):
         embed = discord.Embed(
-            title=f"📖 {command['name']} 指令說明",
-            description=command['brief'],
-            color=0x00ff00
+            title="📚 指令幫助系統",
+            color=0x7289DA,
+            description=(
+                f"使用 `{self.context.prefix}help <指令名稱>` 查看詳細說明\n\n"
+                "⚠️ 部分指令需要 `canOpenServer` 身分組權限\n"
+                "請聯繫管理員取得權限後使用"
+            )
         )
-        for detail in command['details']:
-            if ':' in detail:
-                title, content = detail.split(':', 1)
+
+        # 分類收集指令
+        categories = {}
+        for cog in self.context.bot.cogs.values():
+            if hasattr(cog, 'COMMAND_HELP'):
+                category = cog.COMMAND_HELP.get('category', '其他')
+                categories.setdefault(category, []).append(cog)
+
+        # 修改後
+        category_order = ['基礎', '進階', '系統', '其他']
+        for category in category_order:
+            if category in categories:
+                cogs = categories[category]
+                value = []
+                for cog in cogs:
+                    help_info = cog.COMMAND_HELP
+                    # 顯示完整 tips
+                    tips_text = '\n'.join([f"{t}" for t in help_info.get('tips', [])])
+                    value.append(
+                        f"**{help_info.get('title', '未命名指令')}**\n"
+                        f"{tips_text}\n"
+                    )
+                
                 embed.add_field(
-                    name=title.strip(),
-                    value=content.strip(),
+                    name=f"🔹 {category}類指令",
+                    value='\n'.join(value),
                     inline=False
                 )
-        await ctx.send(embed=embed)
 
-    def cog_unload(self):
-        self.bot.help_command = self._original_help_command
+        # 在最後添加額外說明
+        embed.add_field(
+            name="ℹ️ 其他資訊",
+            value=(
+                "👤 點擊我的頭像選擇「應用程式資訊」查看機器人基本資料\n\n"
+                f"📚 完整使用手冊：[wiki](<{self.context.bot.config['wiki']['base_url']}>)"
+            ),
+            inline=False
+        )
+
+        await self.get_destination().send(embed=embed)
+
+    async def send_command_help(self, command):
+        cog = command.cog
+        if not cog or not hasattr(cog, 'COMMAND_HELP'):
+            return await super().send_command_help(command)
+
+        help_data = cog.COMMAND_HELP
+        embed = discord.Embed(
+            title=f"📖 {help_data.get('title', '指令說明')}",
+            color=int(help_data.get('color', '0xFFFFFF'), 16),
+            description=help_data.get('description', '暫無詳細說明')
+        )
+
+        # 修改後的指令格式欄位
+        if 'name' in help_data:
+            # 從 sections 中尋找參數說明
+            params_section = next((s for s in help_data.get('sections', []) 
+                                 if s.get('title') == '參數格式'), None)
+            
+            # 組合參數文字
+            params_text = ""
+            if params_section:
+                params_text = ' '.join([f"<{p}>" for p in params_section.get('content', [])])
+            
+            embed.add_field(
+                name="📝 指令格式",
+                value=f"`{self.context.prefix}{help_data['name']} {params_text}`".strip(),
+                inline=False
+            )
+
+        for section in help_data.get('sections', []):
+            embed.add_field(
+                name=section.get('title', '其他資訊'),
+                value='\n'.join(section.get('content', ['暫無內容'])),
+                inline=False
+            )
+
+        await self.get_destination().send(embed=embed)
 
 async def setup(bot):
-    await bot.add_cog(CustomHelp(bot))
+    bot.help_command = CustomHelp()
     logger.info('自定義 help 指令已載入') 

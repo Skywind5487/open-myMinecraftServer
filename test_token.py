@@ -1,0 +1,1 @@
+class TokenTestBot(commands.Bot): 

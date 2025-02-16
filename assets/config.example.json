@@ -1,0 +1,24 @@
+{
+  "bot": {
+    "prefix": "!",
+    "token": "your_discord_token_here",
+    "status": "Minecraft 伺服器管理"
+  },
+  "wiki": {
+    "base_url": "https://raw.githubusercontent.com/Skywind5487/open-myMinecraftServer/main/assets/wiki",
+    "default_page": "首頁"
+  },
+  "network": {
+    "ddns": "your_ddns.com",
+    "alist": {
+      "http_port": 5244,
+      "https_port": 5245,
+      "username": "admin",
+      "password": "admin"
+    }
+  },
+  "command_colors": {
+    "ping": "0x00ff00",
+    "help": "0x0000ff"
+  }
+} 

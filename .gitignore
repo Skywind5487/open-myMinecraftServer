@@ -42,4 +42,11 @@ secrets/
 
 # 例外保留範例檔案
 !config.example.json
-!.env.example
+!env.example
+
+# 確保排除所有環境變數檔案
+*.env
+!env.example
+
+# 新增的 token 檔案
+*.token

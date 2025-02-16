@@ -1,2 +1,2 @@
-poetry run python src/bot.py
+poetry run python script/run.py
 pause > nul
