@@ -1,0 +1,45 @@
+# Python 相關
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+
+# 虛擬環境
+.venv/
+venv/
+env/
+
+# 套件與建置
+dist/
+build/
+*.egg-info/
+
+# 測試相關
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 編輯器設定
+.vscode/
+.idea/
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# 日誌檔案
+*.log
+logs/
+
+# 本地環境檔案
+.env
+*.env.local
+
+# 敏感資料
+config.json
+secrets/
+
+# 例外保留範例檔案
+!config.example.json
+!.env.example
