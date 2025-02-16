@@ -38,10 +38,12 @@ logs/
 
 # 敏感資料
 config.json
+servers.json
 secrets/
 
 # 例外保留範例檔案
 !config.example.json
+!servers.example.json
 !env.example
 
 # 確保排除所有環境變數檔案
