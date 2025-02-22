@@ -174,7 +174,7 @@ class StartServer(commands.Cog):
                 # 發送成功訊息，包含連線資訊
                 success_msg = (
                     f"✅ {server_info['name']} 啟動成功！\n"
-                    f"📌 連線位址：{config['DDNS']}:{server_info['port']}\n"
+                    f"📌 連線位址：{config['network']['ddns']}:{server_info['port']}\n"
                     f"⚡ 版本：{server_info['version']} | 核心：{server_info['core']}"
                 )
                 await ctx.send(success_msg)

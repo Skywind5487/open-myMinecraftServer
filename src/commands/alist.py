@@ -18,6 +18,20 @@ class AListCommands(commands.Cog):
                 "content": []  # 無參數
             },
             {
+                "title": "檔案架構規範",
+                "content": [
+                    "採用 PARA 管理系統，主要目錄結構：",
+                    "```",
+                    "1_project/    - 活躍中伺服器",
+                    "2_repo/      - 開發測試用伺服器",
+                    "4_achieve/   - 歸檔舊版伺服器",
+                    "```",
+                    "📁 伺服器資料夾命名規則：",
+                    "`名稱_版本_端口_核心類型`",
+                    "範例：`skywind_empire2_1.21.4_25560_fabric`"
+                ]
+            },
+            {
                 "title": "連線資訊",
                 "content": [
                     "HTTP/HTTPS 雙協議支援",
