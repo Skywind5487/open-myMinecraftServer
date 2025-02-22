@@ -15,12 +15,13 @@ package-mode = false
 python = "^3.9"
 discord-py = "^2.3.2"
 python-dotenv = "^1.0.0"
-plyer = "^2.1.0"
+plyer = "^2.0.0"
 pynacl = "^1.5.0"
-psutil = "^6.1.1"
+psutil = "^5.9.5"
 python-frontmatter = "^1.1.0"
 discord = "^2.3.2"
 setuptools = "^75.8.0"
+zipfile = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
