@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run via Poetry",
+            "type": "python",
+            "request": "launch",
+            "program": "${command:python.interpreterPath}",  // 使用 VSCode 選擇的解釋器
+            "args": [
+                "-m",
+                "poetry",
+                "run",
+                "python",
+                "${file}",
+                "--no-cache-dir"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

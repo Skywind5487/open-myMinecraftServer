@@ -1,15 +1,19 @@
-[tool.poetry]
+[project]
 name = "open-myminecraftserver"
 version = "0.1.0"
-description = "Minecraft server management Discord bot"
-authors = ["Your Name"]
+description = ""
+authors = [
+    {name = "Skywind5487",email = "skywind5487@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "discord-py (>=2.5.0,<3.0.0)",
+    "discord (>=2.3.2,<3.0.0)"
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-discord = "*"
-python-dotenv = "*"
-psutil = "*"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
