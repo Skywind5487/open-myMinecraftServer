@@ -1,37 +1,166 @@
 import asyncio
 import json
 import os
+import re
 from pathlib import Path
-async def add_server(server_path: str):
-    if not os.path.exists(server_path):
-        raise FileNotFoundError(f"伺服器路徑不存在: {server_path}")
+
+async def add_server(server_path: str, force: bool = False, description: str = "") -> dict:
+    """
+    添加一個新的 Minecraft 伺服器到配置文件中。
     
+    Args:
+        server_path (str): 伺服器啟動檔案的完整路徑
+        force (bool): 是否略過資料夾名稱格式檢查
+        description (str): 伺服器描述
+        
+    Returns:
+        dict: 包含新增伺服器資訊的字典
+        
+    Raises:
+        FileNotFoundError: 當指定的路徑不存在時
+        ValueError: 當檔案類型不正確或資料夾命名格式不符合規範時
+    """
+    # 移除引號
+    server_path = server_path.strip('"\'')
+
+    def parse_folder_info(folder_name: str) -> dict:
+        """解析資料夾名稱獲取伺服器信息"""
+        # 使用非貪婪匹配（?）來處理名稱中的底線
+        pattern = r'^(.+?)_(\d+\.\d+\.\d+)_(\d{4,5})_(fabric|forge|vanilla|paper|spigot)$'
+        match = re.match(pattern, folder_name)
+        if not match:
+            return None
+        return {
+            "name": match.group(1),
+            "version": match.group(2),
+            "port": int(match.group(3)),
+            "core_type": match.group(4)
+        }
+
+    # 檢查路徑是否存在
+    if not os.path.exists(server_path):
+        raise FileNotFoundError(f"找不到指定的伺服器路徑：{server_path}")
+    
+    # 檢查是否為有效的啟動檔案
+    if not server_path.lower().endswith(('.bat', '.sh')):
+        raise ValueError("請選擇正確的啟動檔案（必須是 .bat 或 .sh 檔案）")
+    
+    # 只在非強制模式下檢查資料夾命名格式
+    if not force and not parse_folder_info(Path(server_path).parent.name):
+        raise ValueError(
+            "資料夾名稱格式錯誤！\n"
+            "正確格式為：伺服器名稱_版本號_端口號_核心類型\n"
+            "範例：skywind_empire2_1.21.4_25560_fabric\n"
+            "使用 -f 參數可略過此檢查"
+        )
+    
+    # 確保配置目錄存在
     config_dir = Path('config')
     config_dir.mkdir(exist_ok=True)
     config_file = config_dir / 'server.json'
 
-    # 統一使用 server_paths 作為鍵名
+    # 讀取或創建配置文件
     if not config_file.exists():    
-        servers = {
-            "server_paths": []  # 改正鍵名
+        data = {
+            "servers": []
         }
     else:
         with open(config_file, 'r', encoding='utf-8') as f:
             try:
-                servers = json.load(f)
-                # 確保有正確的鍵名
-                if "server_paths" not in servers:
-                    servers["server_paths"] = []
+                data = json.load(f)
+                if "servers" not in data:
+                    data["servers"] = []
             except json.JSONDecodeError:
-                servers = {
-                    "server_paths": []  # 改正鍵名
+                data = {
+                    "servers": []
                 }
 
+    # 檢查路徑是否重複
     normalized_path = os.path.normpath(server_path)
-    if normalized_path in servers["server_paths"]:  # 改正鍵名
-        raise ValueError(f"伺服器路徑已存在: {normalized_path}")
+    if any(server["path"] == normalized_path for server in data["servers"]):
+        raise ValueError(f"此伺服器路徑已經存在：{normalized_path}")
     
-    servers["server_paths"].append(normalized_path)  # 保持一致的鍵名
+    # 解析資料夾信息
+    folder_info = parse_folder_info(Path(server_path).parent.name)
+    if not folder_info and not force:
+        raise ValueError(
+            "資料夾名稱格式錯誤！\n"
+            "正確格式為：伺服器名稱_版本號_端口號_核心類型\n"
+            "範例：skywind_empire2_1.21.4_25560_fabric\n"
+            "使用 -f 參數可略過此檢查"
+        )
+
+    # 創建新伺服器配置
+    new_server = {
+        "path": normalized_path,
+        "name": folder_info["name"] if folder_info else Path(server_path).parent.name,
+        "version": folder_info["version"] if folder_info else "unknown",
+        "port": folder_info["port"] if folder_info else 0,
+        "core_type": folder_info["core_type"] if folder_info else "unknown",
+        "status": "stopped",
+        "last_start": None,
+        "last_stop": None,
+        "description": description
+    }
     
+    # 添加新伺服器
+    data["servers"].append(new_server)
+    
+    # 保存更新後的配置
     with open(config_file, 'w', encoding='utf-8') as f:
-        json.dump(servers, f, ensure_ascii=False, indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    # 返回新增的伺服器資訊
+    return new_server
+
+async def remove_server(server_identifier: str) -> dict:
+    """
+    從配置文件中移除指定的 Minecraft 伺服器。
+    
+    Args:
+        server_identifier (str): 伺服器標識符，格式為 "名稱_版本"
+        
+    Returns:
+        dict: 被移除的伺服器資訊
+        
+    Raises:
+        ValueError: 當找不到指定的伺服器或格式錯誤時
+    """
+    # 使用正則表達式解析伺服器標識符
+    pattern = r'^(.+?)_(\d+\.\d+\.\d+)$'
+    match = re.match(pattern, server_identifier)
+    if not match:
+        raise ValueError(
+            "伺服器標識符格式錯誤！\n"
+            "正確格式為：名稱_版本號\n"
+            "範例：skywind_empire2_1.21.4\n"
+            "注意：名稱可以包含底線，但版本號必須是 x.y.z 格式"
+        )
+    
+    name = match.group(1)  # 取得伺服器名稱（可能包含底線）
+    version = match.group(2)  # 取得版本號
+    
+    config_file = Path('config') / 'server.json'
+    
+    if not config_file.exists():
+        raise ValueError("還沒有任何伺服器被添加")
+    
+    with open(config_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    # 尋找並移除伺服器
+    server_to_remove = None
+    for server in data["servers"]:
+        if server["name"] == name and server["version"] == version:
+            server_to_remove = server
+            data["servers"].remove(server)
+            break
+    
+    if not server_to_remove:
+        raise ValueError(f"找不到名為 '{name}' 且版本為 '{version}' 的伺服器")
+    
+    # 保存更新後的配置
+    with open(config_file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    return server_to_remove
