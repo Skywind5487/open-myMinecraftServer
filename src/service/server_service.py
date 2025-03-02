@@ -3,6 +3,22 @@ import json
 import os
 import re
 from pathlib import Path
+import subprocess
+import psutil
+from datetime import datetime
+from plyer import notification
+import logging
+import time
+
+# 設置日誌
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('server.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 
 async def add_server(server_path: str, force: bool = False, description: str = "") -> dict:
     """
@@ -99,7 +115,8 @@ async def add_server(server_path: str, force: bool = False, description: str = "
         "status": "stopped",
         "last_start": None,
         "last_stop": None,
-        "description": description
+        "description": description,
+        "pid": None
     }
     
     # 添加新伺服器
@@ -181,3 +198,233 @@ async def list_servers() -> list:
         data = json.load(f)
     
     return data.get("servers", [])
+async def start_server(server_identifier: str) -> dict:
+    """
+    啟動指定的 Minecraft 伺服器。
+    
+    Args:
+        server_identifier (str): 伺服器標識符，格式為 "名稱_版本"
+        
+    Returns:
+        dict: 啟動的伺服器資訊
+        
+    Raises:
+        ValueError: 當找不到指定的伺服器或啟動失敗時
+    """
+    pattern = r'^(.+?)_(\d+\.\d+\.\d+)$'
+    match = re.match(pattern, server_identifier)
+    if not match:
+        raise ValueError("伺服器標識符格式錯誤！正確格式為：名稱_版本號")
+    
+    name, version = match.groups()
+    
+    # 讀取配置
+    servers = await list_servers()
+    server = next((s for s in servers if s["name"] == name and s["version"] == version), None)
+    
+    if not server:
+        raise ValueError(f"找不到名為 '{name}' 且版本為 '{version}' 的伺服器")
+    
+    if server["status"] == "running":
+        raise ValueError("伺服器已在運行中")
+    
+    try:
+        # 啟動伺服器
+        server_dir = os.path.dirname(server["path"])
+        server_file = os.path.basename(server["path"])
+
+        if server_file.endswith('.bat'):
+            process = subprocess.Popen(
+                [server_file],
+                cwd=server_dir,
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
+        else:  # 如果是 .sh 檔案
+            process = subprocess.Popen(
+                ['bash', server_file],
+                cwd=server_dir,
+                creationflags=subprocess.CREATE_NEW_CONSOLE
+            )
+
+        # 等待一下確保進程已經啟動
+        await asyncio.sleep(2)
+
+        if process.poll() is not None:  # 如果進程已結束
+            raise ValueError("伺服器進程無法啟動")
+
+        # 獲取子進程 PID
+        parent = psutil.Process(process.pid)
+        children = parent.children(recursive=True)
+        
+        if not children:
+            raise ValueError("無法找到 Minecraft 伺服器進程")
+            
+        # 使用最後一個子進程的 PID（通常是 Java 進程）
+        server_pid = children[-1].pid
+        
+        # 關閉父進程（subprocess）
+        parent.terminate()
+        
+        # 更新伺服器狀態，使用真實的伺服器 PID
+        server["status"] = "running"
+        server["last_start"] = datetime.now().isoformat()
+        server["pid"] = server_pid
+
+        # 保存配置
+        config_path = Path("config/server.json")
+        with open(config_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        for i, s in enumerate(data["servers"]):
+            if s["name"] == name and s["version"] == version:
+                data["servers"][i] = server
+                break
+        
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        # 發送桌面通知
+        notification.notify(
+            title="Minecraft 伺服器啟動",
+            message=f"伺服器 {server['name']} ({server['version']}) 已成功啟動",
+            timeout=5
+        )
+        
+        # 啟動追踪
+        asyncio.create_task(
+            trace_server(server), 
+            name=f"trace_{server['name']}_{server['version']}"
+        )
+        
+        return server
+        
+    except Exception as e:
+        raise ValueError(f"伺服器啟動失敗：{str(e)}")
+
+async def stop_server(server_identifier: str) -> dict:
+    """
+    停止指定的 Minecraft 伺服器。
+    
+    Args:
+        server_identifier (str): 伺服器標識符，格式為 "名稱_版本"
+        
+    Returns:
+        dict: 停止的伺服器資訊
+        
+    Raises:
+        ValueError: 當找不到指定的伺服器或停止失敗時
+    """
+    pattern = r'^(.+?)_(\d+\.\d+\.\d+)$'
+    match = re.match(pattern, server_identifier)
+    if not match:
+        raise ValueError("伺服器標識符格式錯誤！正確格式為：名稱_版本號")
+    
+    name, version = match.groups()
+    
+    # 讀取配置
+    servers = await list_servers()
+    server = next((s for s in servers if s["name"] == name and s["version"] == version), None)
+    
+    if not server:
+        raise ValueError(f"找不到名為 '{name}' 且版本為 '{version}' 的伺服器")
+    
+    if server["status"] != "running":
+        raise ValueError("伺服器未在運行中")
+    
+    try:
+        # 停止追踪
+        for task in asyncio.all_tasks():
+            if task.get_name() == f"trace_{server['name']}_{server['version']}":
+                task.cancel()
+        
+        # 終止進程
+        process = psutil.Process(server["pid"])
+        process.terminate()
+        
+        # 等待進程終止
+        process.wait()
+        
+        # 更新伺服器狀態
+        server["status"] = "stopped"
+        server["last_stop"] = datetime.now().isoformat()
+        server["pid"] = None
+        
+        # 保存配置
+        config_path = Path("config/server.json")
+        with open(config_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        for i, s in enumerate(data["servers"]):
+            if s["name"] == name and s["version"] == version:
+                data["servers"][i] = server
+                break
+        
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        # 發送桌面通知
+        notification.notify(
+            title="Minecraft 伺服器停止",
+            message=f"伺服器 {server['name']} ({server['version']}) 已成功停止",
+            timeout=5
+        )
+        
+        return server
+        
+    except Exception as e:
+        raise ValueError(f"伺服器停止失敗：{str(e)}")
+
+async def trace_server(server: dict) -> None:
+    """
+    追踪伺服器進程狀態。
+    
+    Args:
+        server (dict): 伺服器配置信息
+    """
+    pid = server["pid"]
+    name = server["name"]
+    version = server["version"]
+    
+    logging.info(f"開始追踪伺服器 {name} ({version}) 進程 (PID: {pid})")
+    
+    while True:
+        try:
+            # 檢查進程是否存在
+            process = psutil.Process(pid)
+            if not process.is_running():
+                raise ProcessLookupError
+            
+            # 等待一段時間再檢查
+            await asyncio.sleep(5)
+            
+        except (ProcessLookupError, psutil.NoSuchProcess):
+            # 進程已終止
+            logging.info(f"伺服器 {name} ({version}) 進程已終止 (PID: {pid})")
+            
+            # 更新伺服器狀態
+            server["status"] = "stopped"
+            server["last_stop"] = datetime.now().isoformat()
+            server["pid"] = None
+            
+            # 保存配置
+            config_path = Path("config/server.json")
+            with open(config_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            for i, s in enumerate(data["servers"]):
+                if s["name"] == name and s["version"] == version:
+                    data["servers"][i] = server
+                    break
+            
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            # 發送桌面通知
+            notification.notify(
+                title="Minecraft 伺服器已關閉",
+                message=f"偵測到伺服器 {server['name']} ({server['version']}) 已停止運行",
+                timeout=5
+            )
+            
+            break
+

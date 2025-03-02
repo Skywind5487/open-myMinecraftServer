@@ -13,6 +13,8 @@ def setup(bot):
     bot.add_command(add_server)
     bot.add_command(remove_server)
     bot.add_command(list_servers)  # 改名為 list_servers 避免與內建 list 衝突
+    bot.add_command(start)  # 新增
+    bot.add_command(stop)   # 新增
 
 @commands.command()
 async def add_server(ctx, path: str, force: bool = False, *, description: str = None):
@@ -171,5 +173,121 @@ async def list_servers(ctx):
     )
 
     await ctx.send(embed=embed)
+
+@commands.command()
+async def start(ctx, server_identifier: str):
+    """
+    啟動指定的 Minecraft 伺服器
+    
+    參數：
+    - server_identifier: 伺服器識別碼 (格式：名稱_版本號)
+    """
+    try:
+        server = await server_service.start_server(server_identifier)
+        
+        # 建立嵌入訊息
+        embed = discord.Embed(
+            title="🚀 伺服器啟動中",
+            description=f"正在啟動 {server['name']} ({server['version']}) 伺服器",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="核心", value=server['core_type'], inline=True)
+        embed.add_field(name="端口", value=str(server['port']), inline=True)
+        embed.add_field(name="PID", value=str(server['pid']), inline=True)
+        
+        # 如果設定了 DDNS，添加連線資訊
+        if server['port']:
+            embed.add_field(
+                name="連線地址",
+                value=f"```{DDNS}:{server['port']}```",
+                inline=False
+            )
+        
+        await ctx.send(embed=embed)
+        
+    except ValueError as e:
+        embed = discord.Embed(
+            title="❌ 啟動失敗",
+            description=str(e),
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    except Exception as e:
+        embed = discord.Embed(
+            title="❌ 發生未預期的錯誤",
+            description=f"```{str(e)}```",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@commands.command()
+async def stop(ctx, server_identifier: str):
+    """
+    停止指定的 Minecraft 伺服器
+    
+    參數：
+    - server_identifier: 伺服器識別碼 (格式：名稱_版本號)
+    """
+    try:
+        server = await server_service.stop_server(server_identifier)
+        
+        # 建立嵌入訊息
+        embed = discord.Embed(
+            title="🛑 伺服器已停止",
+            description=f"已成功停止 {server['name']} ({server['version']}) 伺服器",
+            color=discord.Color.orange()
+        )
+        embed.add_field(name="核心", value=server['core_type'], inline=True)
+        embed.add_field(name="端口", value=str(server['port']), inline=True)
+        embed.add_field(
+            name="運行時間",
+            value=get_runtime_duration(server['last_start'], server['last_stop']),
+            inline=False
+        )
+        
+        await ctx.send(embed=embed)
+        
+    except ValueError as e:
+        embed = discord.Embed(
+            title="❌ 停止失敗",
+            description=str(e),
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    except Exception as e:
+        embed = discord.Embed(
+            title="❌ 發生未預期的錯誤",
+            description=f"```{str(e)}```",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+def get_runtime_duration(start_time: str, stop_time: str) -> str:
+    """計算伺服器運行時間"""
+    if not start_time or not stop_time:
+        return "無法計算"
+    
+    try:
+        start = datetime.fromisoformat(start_time)
+        stop = datetime.fromisoformat(stop_time)
+        duration = stop - start
+        
+        days = duration.days
+        hours, remainder = divmod(duration.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        
+        parts = []
+        if days > 0:
+            parts.append(f"{days} 天")
+        if hours > 0:
+            parts.append(f"{hours} 小時")
+        if minutes > 0:
+            parts.append(f"{minutes} 分鐘")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds} 秒")
+            
+        return " ".join(parts)
+    except:
+        return "計算錯誤"
 
 
