@@ -55,17 +55,16 @@ async def add_server(server_path: str, force: bool = False, description: str = "
         )
     
     # 確保配置目錄存在
-    config_dir = Path('config')
-    config_dir.mkdir(exist_ok=True)
-    config_file = config_dir / 'server.json'
+    config_path = Path("config/server.json")
+    config_path.parent.mkdir(exist_ok=True)
 
     # 讀取或創建配置文件
-    if not config_file.exists():    
+    if not config_path.exists():    
         data = {
             "servers": []
         }
     else:
-        with open(config_file, 'r', encoding='utf-8') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             try:
                 data = json.load(f)
                 if "servers" not in data:
@@ -107,7 +106,7 @@ async def add_server(server_path: str, force: bool = False, description: str = "
     data["servers"].append(new_server)
     
     # 保存更新後的配置
-    with open(config_file, 'w', encoding='utf-8') as f:
+    with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
     # 返回新增的伺服器資訊
@@ -140,12 +139,12 @@ async def remove_server(server_identifier: str) -> dict:
     name = match.group(1)  # 取得伺服器名稱（可能包含底線）
     version = match.group(2)  # 取得版本號
     
-    config_file = Path('config') / 'server.json'
+    config_path = Path("config/server.json")
     
-    if not config_file.exists():
+    if not config_path.exists():
         raise ValueError("還沒有任何伺服器被添加")
     
-    with open(config_file, 'r', encoding='utf-8') as f:
+    with open(config_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     # 尋找並移除伺服器
@@ -160,7 +159,25 @@ async def remove_server(server_identifier: str) -> dict:
         raise ValueError(f"找不到名為 '{name}' 且版本為 '{version}' 的伺服器")
     
     # 保存更新後的配置
-    with open(config_file, 'w', encoding='utf-8') as f:
+    with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
     return server_to_remove
+
+
+async def list_servers() -> list:
+    """
+    獲取所有已註冊的伺服器列表。
+    
+    Returns:
+        list: 包含所有伺服器資訊的列表
+    """
+    config_path = Path("config/server.json")
+    
+    if not config_path.exists():
+        return []
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    return data.get("servers", [])

@@ -1,1 +1,20 @@
+# Poetry
+poetry.lock
+dist/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment
 .env
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
