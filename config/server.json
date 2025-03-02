@@ -30,11 +30,11 @@
       "version": "1.20.4",
       "port": 25561,
       "core_type": "fabric",
-      "status": "running",
-      "last_start": "2025-03-02T22:25:06.429320",
-      "last_stop": "2025-03-02T22:24:30.930283",
+      "status": "stopped",
+      "last_start": "2025-03-02T22:44:54.297226",
+      "last_stop": "2025-03-02T22:45:29.376360",
       "description": null,
-      "pid": 15040
+      "pid": null
     }
   ]
 }

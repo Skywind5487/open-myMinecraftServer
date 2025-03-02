@@ -198,6 +198,7 @@ async def list_servers() -> list:
         data = json.load(f)
     
     return data.get("servers", [])
+
 async def start_server(server_identifier: str) -> dict:
     """
     啟動指定的 Minecraft 伺服器。
@@ -233,15 +234,19 @@ async def start_server(server_identifier: str) -> dict:
         server_dir = os.path.dirname(server["path"])
         server_file = os.path.basename(server["path"])
 
+        with open(server["path"], 'r', encoding='utf-8') as f:
+            first_line = f.readline().strip()
+
         if server_file.endswith('.bat'):
             process = subprocess.Popen(
-                [server_file],
+                first_line,
                 cwd=server_dir,
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
+                shell=True
             )
         else:  # 如果是 .sh 檔案
             process = subprocess.Popen(
-                ['bash', server_file],
+                ['bash', '-c', first_line],
                 cwd=server_dir,
                 creationflags=subprocess.CREATE_NEW_CONSOLE
             )
