@@ -42,7 +42,7 @@ async def add_server(server_path: str, force: bool = False, description: str = "
     def parse_folder_info(folder_name: str) -> dict:
         """解析資料夾名稱獲取伺服器信息"""
         # 使用非貪婪匹配（?）來處理名稱中的底線
-        pattern = r'^(.+?)_(\d+\.\d+\.\d+)_(\d{4,5})_(fabric|forge|vanilla|paper|spigot)$'
+        pattern = r'^(.+?)_(\d+\.\d+(?:\.\d+)?(?:\.\d+)?)_(\d{4,5})_(fabric|forge|vanilla|paper|spigot)$'
         match = re.match(pattern, folder_name)
         if not match:
             return None
@@ -212,7 +212,7 @@ async def start_server(server_identifier: str) -> dict:
     Raises:
         ValueError: 當找不到指定的伺服器或啟動失敗時
     """
-    pattern = r'^(.+?)_(\d+\.\d+\.\d+)$'
+    pattern = r'^(.+?)_(\d+\.\d+(?:\.\d+)?(?:\.\d+)?)$'
     match = re.match(pattern, server_identifier)
     if not match:
         raise ValueError("伺服器標識符格式錯誤！正確格式為：名稱_版本號")
@@ -244,6 +244,9 @@ async def start_server(server_identifier: str) -> dict:
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
                 shell=True
             )
+            
+            import config.server_process_config as spc
+            spc.processing_servers[process.pid] = process
         else:  # 如果是 .sh 檔案
             process = subprocess.Popen(
                 ['bash', '-c', first_line],
@@ -338,12 +341,12 @@ async def stop_server(server_identifier: str) -> dict:
     
     try:
         # 停止追踪
-        for task in asyncio.all_tasks():
-            if task.get_name() == f"trace_{server['name']}_{server['version']}":
-                task.cancel()
-        
+      
         # 終止進程
-        process = psutil.Process(server["pid"])
+        import config.server_process_config as spc
+        process = spc.processing_servers.get(server["pid"])        
+        if process is None:
+            raise ValueError("找不到對應的伺服器進程")
         process.terminate()
         
         # 等待進程終止

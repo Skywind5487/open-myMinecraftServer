@@ -88,3 +88,22 @@ discord.ext.commands.errors.MissingRequiredArgument: server_identifier is a requ
 2025-03-02 22:23:40,833 - INFO - 開始追踪伺服器 skeleton-finished (1.20.4) 進程 (PID: 5800)
 2025-03-02 22:24:30,929 - INFO - 伺服器 skeleton-finished (1.20.4) 進程已終止 (PID: 5800)
 2025-03-02 22:25:06,430 - INFO - 開始追踪伺服器 skeleton-finished (1.20.4) 進程 (PID: 15040)
+2025-03-02 22:44:01,215 - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-03-02 22:44:01,222 - INFO - logging in using static token
+2025-03-02 22:44:02,935 - INFO - Shard ID None has connected to Gateway (Session ID: 55094967721a7b8a3e2a75683c777ad4).
+2025-03-02 22:44:54,298 - INFO - 開始追踪伺服器 skeleton-finished (1.20.4) 進程 (PID: 10940)
+2025-03-02 22:45:29,375 - INFO - 伺服器 skeleton-finished (1.20.4) 進程已終止 (PID: 10940)
+2025-03-02 22:45:59,850 - INFO - 開始追踪伺服器 skeleton-finished (1.20.4) 進程 (PID: 43216)
+2025-03-02 22:46:34,919 - INFO - 伺服器 skeleton-finished (1.20.4) 進程已終止 (PID: 43216)
+2025-03-04 22:38:46,625 - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-03-04 22:38:46,635 - INFO - logging in using static token
+2025-03-04 22:38:48,092 - INFO - Shard ID None has connected to Gateway (Session ID: 568d5eff997cfd23609a3c8ce32473da).
+2025-03-04 22:42:11,750 - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-03-04 22:42:11,758 - INFO - logging in using static token
+2025-03-04 22:42:13,194 - INFO - Shard ID None has connected to Gateway (Session ID: a157a5205fd05776476dd130c3a96b5e).
+2025-03-04 22:43:57,810 - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-03-04 22:43:57,816 - INFO - logging in using static token
+2025-03-04 22:43:59,212 - INFO - Shard ID None has connected to Gateway (Session ID: 4b529252da11ad510d7570eda378baed).
+2025-03-04 22:45:27,231 - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-03-04 22:45:27,240 - INFO - logging in using static token
+2025-03-04 22:45:28,531 - INFO - Shard ID None has connected to Gateway (Session ID: 5a32a45bb33f09dc1268728ed769eed5).

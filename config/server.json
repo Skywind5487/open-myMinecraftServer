@@ -31,9 +31,21 @@
       "port": 25561,
       "core_type": "fabric",
       "status": "stopped",
-      "last_start": "2025-03-02T22:44:54.297226",
-      "last_stop": "2025-03-02T22:45:29.376360",
+      "last_start": "2025-03-02T22:45:59.849160",
+      "last_stop": "2025-03-02T22:46:34.919527",
       "description": null,
+      "pid": null
+    },
+    {
+      "path": "D:\\2_repo\\Game\\MC\\sever\\2_repo\\aaaaa_1.20_25561_fabric\\StartServer.bat",
+      "name": "aaaaa",
+      "version": "1.20",
+      "port": 25561,
+      "core_type": "fabric",
+      "status": "stopped",
+      "last_start": null,
+      "last_stop": null,
+      "description": "",
       "pid": null
     }
   ]
