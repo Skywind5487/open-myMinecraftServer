@@ -1,3 +1,4 @@
+Deprecated. Go [MCSM-Discord-Intergrate](https://github.com/Skywind5487/MCSM-Discord-Intergrate)
 # 🎮 Minecraft 伺服器管理機器人
 ![Wiki](https://github.com/Skywind5487/open-myMinecraftServer/blob/main/assets/wiki)
 
